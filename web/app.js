@@ -105,11 +105,16 @@ function updateDisplay() {
     }
     for (let i = 0; i < tableData.length; i++) {
         let block = tableData[i];
+        if (block == null) { continue; }
+
         let blockPosition = block.position;
         let blockValue = block.value;
 
         let cellElement = table2DArray[blockPosition[0]][blockPosition[1]]
-        cellElement.innerHTML = blockValue
+        if (blockValue != 0) {
+
+            cellElement.innerHTML = blockValue
+        }
     }
 }
 
@@ -133,6 +138,8 @@ function checkCellEmpty(position) {
     if (y < 0 || y > 3) { return false; }
     for (let i = 0; i < tableData.length; i++) {
         let block = tableData[i];
+        if (block == null) { continue; }
+
         if (arraysAreEqual(position, block.position)) {
             return false;
         }
@@ -147,6 +154,8 @@ function checkCellHasBlock(position) {
     if (y < 0 || y > 3) { return [false, null]; }
     for (let i = 0; i < tableData.length; i++) {
         let block = tableData[i];
+        if (block == null) { continue; }
+
         if (arraysAreEqual(position, block.position)) {
             return [true, block];
         }
@@ -156,6 +165,7 @@ function checkCellHasBlock(position) {
 
 
 function checkMoveValid(block) {
+    if (block == null) { return; }
     let position = block.position;
     let whatToCheck = currentDirection == Direction.Left || currentDirection == Direction.Up ? 0 : 1;
     let x = position[currentDirection == Direction.Left || currentDirection == Direction.Right ? 1 : 0];
@@ -178,28 +188,25 @@ function checkMoveValid(block) {
     }
     if (!checkCellEmpty(newPosition)) {
         let potentialBlock = checkCellHasBlock(newPosition);
-        if(potentialBlock[0] == true){
+        if (potentialBlock[0] == true) {
             let nextBlock = potentialBlock[1];
-            if(block.value == nextBlock.value){
-                block.value = block.value + nextBlock.value;
-                nextBlock.value = 0;
-                let indexOfNextBlock = tableData.indexOf(nextBlock);
-                if(indexOfNextBlock != -1){
-                    tableData.splice(indexOfNextBlock, 1);
-                }
+            if (block.value == nextBlock.value && block.value != 0 && nextBlock.value != 0) {
+                nextBlock.value = block.value + nextBlock.value;
+                block.value = 0;
                 return true;
             }
         }
         return false;
     }
     if (whatToCheck == 0) {
-        return x == 0 ? false : true;
+        return x != 0;
     } else {
-        return x == 3 ? false : true;
+        return x != 3;
     }
 }
 
 function moveBlocks() {
+    sortBlocks();
     for (let i = 0; i < tableData.length; i++) {
         let block = tableData[i];
 
@@ -224,33 +231,71 @@ function moveBlocks() {
 
 
     }
-    for (let i = tableData.length; i > 0; i--) {
-        let block = tableData[i - 1];
-
-        while (checkMoveValid(block)) {
-            switch (currentDirection) {
-                case Direction.Left:
-                    block.position[1] = block.position[1] - 1;
-                    break;
-                case Direction.Right:
-                    block.position[1] = block.position[1] + 1;
-                    break;
-                case Direction.Up:
-                    block.position[0] = block.position[0] - 1;
-                    break;
-                case Direction.Down:
-                    block.position[0] = block.position[0] + 1;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-
-    }
-    console.log(tableData)
 
 }
+
+function sortBlocks() {
+    let isVertical = currentDirection == Direction.Up || currentDirection == Direction.Down;
+    let startsAtZero = currentDirection == Direction.Up || currentDirection == Direction.Left;
+    let sortedPositions = []
+    if (isVertical) {
+        for (let i = 0; i < 4; i++) {
+            let y = i;
+            let x = null;
+            if (startsAtZero) {
+                for (let j = 0; j < 4; j++) {
+                    x = j;
+                    sortedPositions.push([x, y]);
+                }
+            } else {
+                for (let j = 3; j >= 0; j--) {
+                    x = j
+                    sortedPositions.push([x, y]);
+
+                }
+            }
+        }
+    } else {
+        for (let i = 0; i < 4; i++) {
+            let x = i;
+            let y = null;
+            if (startsAtZero) {
+                for (let j = 0; j < 4; j++) {
+                    y = j;
+                    sortedPositions.push([x, y]);
+                }
+            } else {
+                for (let j = 3; j >= 0; j--) {
+                    y = j
+                    sortedPositions.push([x, y]);
+
+                }
+            }
+        }
+    }
+    let newTableData = [];
+    for (let i = 0; i < tableData.length; i++) {
+        let block = tableData[i];
+        if (block == null) { continue; }
+        if (block.value != 0) {
+            newTableData.push(block);
+        }
+    }
+    tableData = [...newTableData];
+    newTableData = [];
+    for (let i = 0; i < sortedPositions.length; i++) {
+        let potentialBlock = checkCellHasBlock(sortedPositions[i]);
+        let hasBlock = potentialBlock[0];
+        //if (hasBlock) {
+            newTableData.push(potentialBlock[1]);
+            console.log(sortedPositions[i])
+        //}
+    }
+    tableData = [...newTableData];
+    console.log([...tableData])
+}
+
+
 
 
 
@@ -292,7 +337,7 @@ downMoveButton.onclick = () => {
 }
 
 
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
     // Check if the pressed key is an arrow key
     if (event.key === "ArrowUp") {
         currentDirection = Direction.Up;
@@ -317,3 +362,16 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
+
+
+
+
+  // Event listener for when the window gains focus
+window.addEventListener("focus", function() {
+    console.log("Window is in focus");
+  });
+  
+  // Event listener for when the window loses focus
+  window.addEventListener("blur", function() {
+    console.log("Window is not in focus");
+  });
